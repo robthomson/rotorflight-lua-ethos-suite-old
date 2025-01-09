@@ -35,7 +35,7 @@ createSensorList[0x5250] = {name = "Consumption", unit = UNIT_MILLIAMPERE_HOUR}
 createSensorList[0x5260] = {name = "Battery Cell Count", unit = UNIT_RAW}
 createSensorList[0x5268] = {name = "Esc1. Power", unit = UNIT_AMPERE}
 createSensorList[0x5269] = {name = "Esc1. Throttle", unit = UNIT_PERCENT}
-createSensorList[0x51DO] = {name = "CPU Load", unit = UNIT_PERCENT}
+createSensorList[0x51D0] = {name = "CPU Load", unit = UNIT_PERCENT}
 createSensorList[0x51D1] = {name = "SYS Load", unit = UNIT_PERCENT}
 createSensorList[0x51D2] = {name = "RT Load", unit = UNIT_PERCENT}
 createSensorList[0x51A4] = {name = "Throttle %", unit = UNIT_PERCENT}
@@ -43,7 +43,6 @@ createSensorList[0x51A0] = {name = "Pitch °", unit = UNIT_DEGREE}
 createSensorList[0x51A1] = {name = "Roll °", unit = UNIT_DEGREE}
 createSensorList[0x51A2] = {name = "Yaw °", unit = UNIT_DEGREE}
 createSensorList[0x51A3] = {name = "Collective °", unit = UNIT_DEGREE}
-createSensorList[0x5450] = {name = "Governor", unit = UNIT_RAW}
 createSensorList[0x5120] = {name = "Model ID", unit = UNIT_RAW}
 createSensorList[0x5121] = {name = "Flight Mode", unit = UNIT_RAW}
 createSensorList[0x5122] = {name = "Arming Flags", unit = UNIT_RAW}
@@ -56,7 +55,7 @@ createSensorList[0x5131] = {name = "Rate Profile", unit = UNIT_RAW}
 -- we need to do this due to old rf2.1 values having invalid app id
 -- these are identical to the some values in the above list - but we would
 -- not expect them to be created or even found once custom telemetry is enabled
-if rfsuite.config.apiVersion <= 12.07 then
+if rfsuite.config.apiVersion ~= nil and rfsuite.config.apiVersion <= 12.07 then
     createSensorList[0x5440] = {name = "Throttle %", unit = UNIT_PERCENT}
     createSensorList[0x5441] = {name = "Pitch °", unit = UNIT_DEGREE}
     createSensorList[0x5442] = {name = "Roll °", unit = UNIT_DEGREE}
