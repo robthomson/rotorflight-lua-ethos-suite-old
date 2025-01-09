@@ -28,8 +28,16 @@ local frsky = {}
 local createSensorList = {}
 
 -- LuaFormatter off
+createSensorList[0x5100] = {name = "Heartbeat", unit = UNIT_RAW}
+createSensorList[0x5110] = {name = "Adj. Source", unit = UNIT_RAW}
+createSensorList[0x5111] = {name = "Adj. Value", unit = UNIT_RAW}
 createSensorList[0x5250] = {name = "Consumption", unit = UNIT_MILLIAMPERE_HOUR}
 createSensorList[0x5260] = {name = "Battery Cell Count", unit = UNIT_RAW}
+createSensorList[0x5268] = {name = "Esc1. Power", unit = UNIT_AMPERE}
+createSensorList[0x5269] = {name = "Esc1. Throttle", unit = UNIT_PERCENT}
+createSensorList[0x52C0] = {name = "CPU Load", unit = UNIT_PERCENT}
+createSensorList[0x52C1] = {name = "SYS Load", unit = UNIT_PERCENT}
+createSensorList[0x52C2] = {name = "RT Load", unit = UNIT_PERCENT}
 createSensorList[0x5440] = {name = "Throttle %", unit = UNIT_PERCENT}
 createSensorList[0x5441] = {name = "Pitch °", unit = UNIT_DEGREE}
 createSensorList[0x5442] = {name = "Roll °", unit = UNIT_DEGREE}
@@ -42,12 +50,11 @@ createSensorList[0x5461] = {name = "Flight Mode", unit = UNIT_RAW}
 createSensorList[0x5462] = {name = "Arming Flags", unit = UNIT_RAW}
 createSensorList[0x5463] = {name = "Arming Disable Flags", unit = UNIT_RAW}
 createSensorList[0x5465] = {name = "Governor State", unit = UNIT_RAW}
+createSensorList[0x5466] = {name = "GPS Sats", unit = UNIT_RAW}
 createSensorList[0x5471] = {name = "PID Profile", unit = UNIT_RAW}
 createSensorList[0x5472] = {name = "Rate Profile", unit = UNIT_RAW}
 createSensorList[0x5473] = {name = "Led Profile", unit = UNIT_RAW}
-createSensorList[0x5100] = {name = "Heartbeat", unit = UNIT_RAW}
-createSensorList[0x5110] = {name = "Adj. Source", unit = UNIT_RAW}
-createSensorList[0x5111] = {name = "Adj. Value", unit = UNIT_RAW}
+
 -- LuaFormatter on
 
 
