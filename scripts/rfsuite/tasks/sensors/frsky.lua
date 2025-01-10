@@ -21,13 +21,17 @@
 --
 local arg = {...}
 local config = arg[1]
+local cacheExpireTime = 30  -- Time in seconds to expire the caches
+local lastCacheFlushTime = os.clock()  -- Store the initial time
+
 
 local frsky = {}
+
+-- LuaFormatter off
 
 -- create custom sensors
 local createSensorList = {}
 
--- LuaFormatter off
 createSensorList[0x5100] = {name = "Heartbeat", unit = UNIT_RAW}
 createSensorList[0x5110] = {name = "Adj. Source", unit = UNIT_RAW}
 createSensorList[0x5111] = {name = "Adj. Value", unit = UNIT_RAW}
@@ -50,37 +54,8 @@ createSensorList[0x5123] = {name = "Arming Disable Flags", unit = UNIT_RAW}
 createSensorList[0x5124] = {name = "Rescue State", unit = UNIT_RAW}    
 createSensorList[0x5125] = {name = "Governor State", unit = UNIT_RAW}
 createSensorList[0x5130] = {name = "PID Profile", unit = UNIT_RAW}
-createSensorList[0x5131] = {name = "Rate Profile", unit = UNIT_RAW}
+createSensorList[0x5131] = {name = "Rate Profile", unit = UNIT_RAW}   
 
--- we need to do this due to old rf2.1 values having invalid app id
--- these are identical to the some values in the above list - but we would
--- not expect them to be created or even found once custom telemetry is enabled
-if rfsuite.config.apiVersion ~= nil and rfsuite.config.apiVersion <= 12.07 then
-    print("Creating custom sensors for RF2.1")
-    createSensorList[0x5440] = {name = "Throttle %", unit = UNIT_PERCENT}
-    createSensorList[0x5441] = {name = "Pitch Attitude", unit = UNIT_DEGREE}
-    createSensorList[0x5442] = {name = "Roll Attitude", unit = UNIT_DEGREE}
-    createSensorList[0x5443] = {name = "Yaw Attitude", unit = UNIT_DEGREE}
-    createSensorList[0x5444] = {name = "Coll Control", unit = UNIT_DEGREE}
-    createSensorList[0x5450] = {name = "Governor", unit = UNIT_RAW}
-    createSensorList[0x5454] = {name = "Rescue State", unit = UNIT_RAW}
-    createSensorList[0x5460] = {name = "Model ID", unit = UNIT_RAW}
-    createSensorList[0x5461] = {name = "Flight Mode", unit = UNIT_RAW}
-    createSensorList[0x5462] = {name = "Arming Flags", unit = UNIT_RAW}
-    createSensorList[0x5463] = {name = "Arming Disable Flags", unit = UNIT_RAW}
-    createSensorList[0x5465] = {name = "Governor State", unit = UNIT_RAW}
-    createSensorList[0x5471] = {name = "PID Profile", unit = UNIT_RAW}
-    createSensorList[0x5472] = {name = "Rate Profile", unit = UNIT_RAW}
-end
--- LuaFormatter on
-
-
--- drop (drop sensors only runs if < msp 12.08)
-local dropSensorList = {}
-
--- LuaFormatter off
-dropSensorList[0x0400] = {name = "Temp1"}
-dropSensorList[0x0410] = {name = "Temp1"}
 -- LuaFormatter on
 
 -- rename sensors to be more rotorflight specific
@@ -116,12 +91,11 @@ renameSensorList[0x0B70] = {name = "ESC Temp", onlyifname = "ESC temp"}
 -- LuaFormatter on
 
 frsky.createSensorCache = {}
-frsky.dropSensorCache = {}
 frsky.renameSensorCache = {}
 
 local function createSensor(physId, primId, appId, frameValue)
 
-    -- we dont want any deletions if api has not been found
+    -- we dont want any creations if api has not been found
     if rfsuite.config.apiVersion == nil then return end
 
     -- check for custom sensors and create them if they dont exist
@@ -137,8 +111,6 @@ local function createSensor(physId, primId, appId, frameValue)
             })
 
             if frsky.createSensorCache[appId] == nil then
-
-                rfsuite.utils.log("Creating sensor: " .. v.name)
 
                 frsky.createSensorCache[appId] = model.createSensor()
                 frsky.createSensorCache[appId]:name(v.name)
@@ -167,34 +139,6 @@ local function createSensor(physId, primId, appId, frameValue)
 
 end
 
-local function dropSensor(physId, primId, appId, frameValue)
-
-    -- we dont want any deletions if api has not been found
-    if rfsuite.config.apiVersion == nil then return end
-
-    -- we do not do any sensor dropping post 12.08 as have new frsky telem system
-    if rfsuite.config.apiVersion >= 12.08 then return end
-
-    -- check for custom sensors and create them if they dont exist
-    if dropSensorList[appId] ~= nil then
-        local v = dropSensorList[appId]
-
-        if frsky.dropSensorCache[appId] == nil then
-            frsky.dropSensorCache[appId] = system.getSource({
-                category = CATEGORY_TELEMETRY_SENSOR,
-                appId = appId
-            })
-
-            if frsky.dropSensorCache[appId] ~= nil then
-                rfsuite.utils.log("Drop sensor: " .. v.name)
-                frsky.dropSensorCache[appId]:drop()
-            end
-
-        end
-
-    end
-
-end
 
 local function renameSensor(physId, primId, appId, frameValue)
 
@@ -213,7 +157,6 @@ local function renameSensor(physId, primId, appId, frameValue)
 
             if frsky.renameSensorCache[appId] ~= nil then
                 if frsky.renameSensorCache[appId]:name() == v.onlyifname then
-                    rfsuite.utils.log("Rename sensor: " .. v.name)
                     frsky.renameSensorCache[appId]:name(v.name)
                 end
             end
@@ -226,31 +169,43 @@ end
 
 local function telemetryPop()
     -- Pops a received SPORT packet from the queue. Please note that only packets using a data ID within 0x5000 to 0x50FF (frame ID == 0x10), as well as packets with a frame ID equal 0x32 (regardless of the data ID) will be passed to the LUA telemetry receive queue.
+
+    -- Quick return if we dont have an api version
+    if rfsuite.config.apiVersion == nil then return false end
+
     local frame = rfsuite.bg.msp.sensor:popFrame()
     if frame == nil then return false end
 
     if not frame.physId or not frame.primId then return end
 
     createSensor(frame:physId(), frame:primId(), frame:appId(), frame:value())
-    dropSensor(frame:physId(), frame:primId(), frame:appId(), frame:value())
     renameSensor(frame:physId(), frame:primId(), frame:appId(), frame:value())
+
     return true
 end
 
 function frsky.wakeup()
 
-    -- flush sensor list if we kill the sensors
-    if not rfsuite.bg.telemetry.active() or not rfsuite.rssiSensor then
+    -- Function to clear caches
+    local function clearCaches()
         frsky.createSensorCache = {}
         frsky.renameSensorCache = {}
-        frsky.dropSensorCache = {}
     end
 
-    -- if gui or queue is busy.. do not do this!
-    if rfsuite.bg and rfsuite.bg.telemetry and rfsuite.bg.telemetry.active() and
-        rfsuite.rssiSensor then
-        if rfsuite.app.guiIsRunning == false and
-            rfsuite.bg.msp.mspQueue:isProcessed() then
+    -- Check if it's time to expire the caches
+    if os.clock() - lastCacheFlushTime >= cacheExpireTime then
+        clearCaches()
+        lastCacheFlushTime = os.clock()  -- Reset the timer
+    end
+
+    -- Flush sensor list if we kill the sensors
+    if not rfsuite.bg.telemetry.active() or not rfsuite.rssiSensor then
+        clearCaches()
+    end
+
+    -- If GUI or queue is busy.. do not do this!
+    if rfsuite.bg and rfsuite.bg.telemetry and rfsuite.bg.telemetry.active() and rfsuite.rssiSensor then
+        if rfsuite.app.guiIsRunning == false and rfsuite.bg.msp.mspQueue:isProcessed() then
             while telemetryPop() do end
         end
     end
