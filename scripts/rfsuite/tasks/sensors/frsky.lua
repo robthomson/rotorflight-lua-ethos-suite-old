@@ -32,17 +32,17 @@ createSensorList[0x5100] = {name = "Heartbeat", unit = UNIT_RAW}
 createSensorList[0x5110] = {name = "Adj. Source", unit = UNIT_RAW}
 createSensorList[0x5111] = {name = "Adj. Value", unit = UNIT_RAW}
 createSensorList[0x5250] = {name = "Consumption", unit = UNIT_MILLIAMPERE_HOUR}
-createSensorList[0x5260] = {name = "Battery Cell Count", unit = UNIT_RAW}
-createSensorList[0x5268] = {name = "Esc1. Power", unit = UNIT_AMPERE}
-createSensorList[0x5269] = {name = "Esc1. Throttle", unit = UNIT_PERCENT}
+createSensorList[0x5260] = {name = "Cell Count", unit = UNIT_RAW}
+createSensorList[0x5268] = {name = "ESC1 Power", unit = UNIT_AMPERE}
+createSensorList[0x5269] = {name = "ESC1 Throttle", unit = UNIT_PERCENT}
 createSensorList[0x51D0] = {name = "CPU Load", unit = UNIT_PERCENT}
 createSensorList[0x51D1] = {name = "SYS Load", unit = UNIT_PERCENT}
 createSensorList[0x51D2] = {name = "RT Load", unit = UNIT_PERCENT}
 createSensorList[0x51A4] = {name = "Throttle %", unit = UNIT_PERCENT}
-createSensorList[0x51A0] = {name = "Pitch °", unit = UNIT_DEGREE}
-createSensorList[0x51A1] = {name = "Roll °", unit = UNIT_DEGREE}
-createSensorList[0x51A2] = {name = "Yaw °", unit = UNIT_DEGREE}
-createSensorList[0x51A3] = {name = "Collective °", unit = UNIT_DEGREE}
+createSensorList[0x51A0] = {name = "Pitch Attitude", unit = UNIT_DEGREE}
+createSensorList[0x51A1] = {name = "Roll Attitude", unit = UNIT_DEGREE}
+createSensorList[0x51A2] = {name = "Yaw Attitude", unit = UNIT_DEGREE}
+createSensorList[0x51A3] = {name = "Coll Control", unit = UNIT_DEGREE}
 createSensorList[0x5120] = {name = "Model ID", unit = UNIT_RAW}
 createSensorList[0x5121] = {name = "Flight Mode", unit = UNIT_RAW}
 createSensorList[0x5122] = {name = "Arming Flags", unit = UNIT_RAW}
@@ -56,11 +56,12 @@ createSensorList[0x5131] = {name = "Rate Profile", unit = UNIT_RAW}
 -- these are identical to the some values in the above list - but we would
 -- not expect them to be created or even found once custom telemetry is enabled
 if rfsuite.config.apiVersion ~= nil and rfsuite.config.apiVersion <= 12.07 then
+    print("Creating custom sensors for RF2.1")
     createSensorList[0x5440] = {name = "Throttle %", unit = UNIT_PERCENT}
-    createSensorList[0x5441] = {name = "Pitch °", unit = UNIT_DEGREE}
-    createSensorList[0x5442] = {name = "Roll °", unit = UNIT_DEGREE}
-    createSensorList[0x5443] = {name = "Yaw °", unit = UNIT_DEGREE}
-    createSensorList[0x5444] = {name = "Collective °", unit = UNIT_DEGREE}
+    createSensorList[0x5441] = {name = "Pitch Attitude", unit = UNIT_DEGREE}
+    createSensorList[0x5442] = {name = "Roll Attitude", unit = UNIT_DEGREE}
+    createSensorList[0x5443] = {name = "Yaw Attitude", unit = UNIT_DEGREE}
+    createSensorList[0x5444] = {name = "Coll Control", unit = UNIT_DEGREE}
     createSensorList[0x5450] = {name = "Governor", unit = UNIT_RAW}
     createSensorList[0x5454] = {name = "Rescue State", unit = UNIT_RAW}
     createSensorList[0x5460] = {name = "Model ID", unit = UNIT_RAW}
