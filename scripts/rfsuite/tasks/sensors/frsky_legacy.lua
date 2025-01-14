@@ -17,18 +17,21 @@
  * Note.  Some icons have been sourced from https://www.flaticon.com/
  *
 
-]] --
+* This script is called when using RF2.1 or lower. It is used to create, drop and rename sensors for the legacy frsky protocol
+
+]]--
+
 --
 local arg = {...}
 local config = arg[1]
-
-local frsky = {}
 local cacheExpireTime = 10  -- Time in seconds to expire the caches
 local lastCacheFlushTime = os.clock()  -- Store the initial time
 
+local frsky_legacy = {}
+
 -- create
 local createSensorList = {}
-createSensorList[0x5450] = {name = "Governor", unit = UNIT_RAW}
+createSensorList[0x5450] = {name = "Governor Flags", unit = UNIT_RAW}
 createSensorList[0x5110] = {name = "Adj. Source", unit = UNIT_RAW}
 createSensorList[0x5111] = {name = "Adj. Value", unit = UNIT_RAW}
 createSensorList[0x5460] = {name = "Model ID", unit = UNIT_RAW}
@@ -67,9 +70,9 @@ renameSensorList[0x0B71] = {name = "ESC2 Temp", onlyifname = "ESC temp"}
 renameSensorList[0x0401] = {name = "MCU Temp", onlyifname = "Temp1"}
 renameSensorList[0x0840] = {name = "Heading", onlyifname = "GPS course"}
 
-frsky.createSensorCache = {}
-frsky.dropSensorCache = {}
-frsky.renameSensorCache = {}
+frsky_legacy.createSensorCache = {}
+frsky_legacy.dropSensorCache = {}
+frsky_legacy.renameSensorCache = {}
 
 local function createSensor(physId, primId, appId, frameValue)
 
@@ -78,28 +81,26 @@ local function createSensor(physId, primId, appId, frameValue)
 
         local v = createSensorList[appId]
 
-        if frsky.createSensorCache[appId] == nil then
+        if frsky_legacy.createSensorCache[appId] == nil then
 
-            frsky.createSensorCache[appId] = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = appId})
+            frsky_legacy.createSensorCache[appId] = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = appId})
 
-            if frsky.createSensorCache[appId] == nil then
+            if frsky_legacy.createSensorCache[appId] == nil then
 
-                print("Creating sensor: " .. v.name)
-
-                frsky.createSensorCache[appId] = model.createSensor()
-                frsky.createSensorCache[appId]:name(v.name)
-                frsky.createSensorCache[appId]:appId(appId)
-                frsky.createSensorCache[appId]:physId(physId)
-                frsky.createSensorCache[appId]:module(rfsuite.rssiSensor:module())
+                frsky_legacy.createSensorCache[appId] = model.createSensor()
+                frsky_legacy.createSensorCache[appId]:name(v.name)
+                frsky_legacy.createSensorCache[appId]:appId(appId)
+                frsky_legacy.createSensorCache[appId]:physId(physId)
+                frsky_legacy.createSensorCache[appId]:module(rfsuite.rssiSensor:module())
 
                 frsky.createSensorCache[appId]:minimum(min or -1000000000)
-                frsky.createSensorCache[appId]:maximum(max or 2147483647)
+                frsky_legacy.createSensorCache[appId]:maximum(max or 2147483647)
                 if v.unit ~= nil then
-                    frsky.createSensorCache[appId]:unit(v.unit)
-                    frsky.createSensorCache[appId]:protocolUnit(v.unit)
+                    frsky_legacy.createSensorCache[appId]:unit(v.unit)
+                    frsky_legacy.createSensorCache[appId]:protocolUnit(v.unit)
                 end
-                if v.minimum ~= nil then frsky.createSensorCache[appId]:minimum(v.minimum) end
-                if v.maximum ~= nil then frsky.createSensorCache[appId]:maximum(v.maximum) end
+                if v.minimum ~= nil then frsky_legacy.createSensorCache[appId]:minimum(v.minimum) end
+                if v.maximum ~= nil then frsky_legacy.createSensorCache[appId]:maximum(v.maximum) end
 
             end
 
@@ -114,12 +115,11 @@ local function dropSensor(physId, primId, appId, frameValue)
     if dropSensorList[appId] ~= nil then
         local v = dropSensorList[appId]
 
-        if frsky.dropSensorCache[appId] == nil then
-            frsky.dropSensorCache[appId] = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = appId})
+        if frsky_legacy.dropSensorCache[appId] == nil then
+            frsky_legacy.dropSensorCache[appId] = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = appId})
 
-            if frsky.dropSensorCache[appId] ~= nil then
-                print("Drop sensor: " .. v.name)
-                frsky.dropSensorCache[appId]:drop()
+            if frsky_legacy.dropSensorCache[appId] ~= nil then
+                frsky_legacy.dropSensorCache[appId]:drop()
             end
 
         end
@@ -134,13 +134,12 @@ local function renameSensor(physId, primId, appId, frameValue)
     if renameSensorList[appId] ~= nil then
         local v = renameSensorList[appId]
 
-        if frsky.renameSensorCache[appId] == nil then
-            frsky.renameSensorCache[appId] = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = appId})
+        if frsky_legacy.renameSensorCache[appId] == nil then
+            frsky_legacy.renameSensorCache[appId] = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = appId})
 
-            if frsky.renameSensorCache[appId] ~= nil then
-                if frsky.renameSensorCache[appId]:name() == v.onlyifname then
-                    print("Rename sensor: " .. v.name)
-                    frsky.renameSensorCache[appId]:name(v.name)
+            if frsky_legacy.renameSensorCache[appId] ~= nil then
+                if frsky_legacy.renameSensorCache[appId]:name() == v.onlyifname then
+                    frsky_legacy.renameSensorCache[appId]:name(v.name)
                 end
             end
 
@@ -163,13 +162,13 @@ local function telemetryPop()
     return true
 end
 
-function frsky.wakeup()
+function frsky_legacy.wakeup()
 
     -- Function to clear caches
     local function clearCaches()
-        frsky.createSensorCache = {}
-        frsky.renameSensorCache = {}
-        frsky.dropSensorCache = {}  
+        frsky_legacy.createSensorCache = {}
+        frsky_legacy.renameSensorCache = {}
+        frsky_legacy.dropSensorCache = {}  -- We don't use this in this script, but keep it here in case the legacy script is used
     end
 
     -- Check if it's time to expire the caches
@@ -192,4 +191,4 @@ function frsky.wakeup()
 
 end
 
-return frsky
+return frsky_legacy
