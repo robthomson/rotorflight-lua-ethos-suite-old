@@ -597,6 +597,7 @@ local function wakeup()
     -- Logic for paging and navigation can go here when data processing is complete
 end
 
+
 local function paint()
 
     local menu_offset = graphPos['menu_offset']
@@ -608,7 +609,9 @@ local function paint()
     if enableWakeup == true and processedLogData == true then
 
         if logData ~= nil then
-            local optimal_records_per_page, optimal_steps = calculate_optimal_records_per_page(logLineCount, 40, 120)
+
+            local maxRecords = math.max(50, 120 - math.floor(logLineCount / 10)) -- Calculate the maximum number of records per page to prevent excessive instruction errors
+            local optimal_records_per_page, optimal_steps = calculate_optimal_records_per_page(logLineCount, 40, maxRecords)
 
             local step_size = optimal_records_per_page
 
